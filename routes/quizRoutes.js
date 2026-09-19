@@ -7,9 +7,11 @@ const {
   getQuizById
 } = require('../controllers/quizController');
 const { protect } = require('../middleware/authMiddleware');
+const csrfProtection = require('../middleware/csrf');
 
 // All quiz endpoints require JWT authentication
 router.use(protect);
+router.use(csrfProtection);
 
 router.post('/generate', generateQuiz);
 router.post('/result', submitQuizResult);

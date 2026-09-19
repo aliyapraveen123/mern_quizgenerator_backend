@@ -19,6 +19,26 @@ const userSchema = new mongoose.Schema(
         'Please provide a valid email address'
       ]
     },
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    verificationTokenHash: {
+      type: String,
+      default: null
+    },
+    verificationTokenExpires: {
+      type: Date,
+      default: null
+    },
+    resetPasswordTokenHash: {
+      type: String,
+      default: null
+    },
+    resetPasswordTokenExpires: {
+      type: Date,
+      default: null
+    },
     password: {
       type: String,
       required: [true, 'Please provide a password'],
