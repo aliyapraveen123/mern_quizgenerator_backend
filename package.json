@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "nodemailer": "^6.9.4",
+    "resend": "^6.28.1",
     "youtube-transcript": "^1.2.1"
   }
 }

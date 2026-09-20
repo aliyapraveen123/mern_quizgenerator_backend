@@ -5,14 +5,18 @@ const isEmailConfigured = () => {
   return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS);
 };
 
+const getFromAddress = () => {
+  const configuredFrom = (process.env.FROM_EMAIL || process.env.SMTP_USER || '').trim();
+  if (!configuredFrom) return process.env.SMTP_USER || 'no-reply@example.com';
+  return configuredFrom.replace(/^"|"$/g, '');
+};
+
 const getTransporter = () => {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
   if (!isEmailConfigured()) return null;
 
   const port = parseInt(SMTP_PORT, 10);
-  const secure = port === 465; // true for 465, false for other ports
-  // Google shows App Passwords as four groups of four characters. Whitespace
-  // is only visual grouping and must not be sent as part of the credential.
+  const secure = port === 465;
   const password = SMTP_HOST.toLowerCase().includes('gmail.com')
     ? SMTP_PASS.replace(/\s/g, '')
     : SMTP_PASS;
@@ -35,15 +39,22 @@ const sendEmail = async ({ to, subject, html, text }) => {
     return { success: false, code: 'EMAIL_NOT_CONFIGURED' };
   }
 
-  const from = process.env.FROM_EMAIL || process.env.SMTP_USER;
+  const from = getFromAddress();
 
   try {
     const info = await transporter.sendMail({
       from,
+      sender: from,
+      replyTo: from,
       to,
       subject,
       text: text || undefined,
-      html: html || undefined
+      html: html || undefined,
+      headers: {
+        'X-Mailer': 'AI Quiz Generator',
+        'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN',
+        'Priority': 'normal'
+      }
     });
 
     return { success: true, messageId: info.messageId };

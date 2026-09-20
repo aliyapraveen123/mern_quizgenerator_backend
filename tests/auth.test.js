@@ -1,6 +1,7 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret';
 const { registerUser, verifyEmail, loginUser } = require('../controllers/authController');
 const User = require('../models/User');
+const { sendEmail } = require('../utils/email');
 
 jest.mock('../models/User');
 jest.mock('../utils/email', () => ({
@@ -16,7 +17,10 @@ const makeRes = () => {
 };
 
 describe('Auth controller (unit)', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    process.env.NODE_ENV = 'production';
+    jest.clearAllMocks();
+  });
 
   test('register -> verify -> login (mocked)', async () => {
     const email = `unit${Date.now()}@example.com`;
@@ -85,4 +89,34 @@ describe('Auth controller (unit)', () => {
     // Token is set as HttpOnly cookie; response body contains user data
     expect(loginData.data.email).toBe(email);
   });
+
+  test('register with an existing unverified user resends the OTP instead of throwing a 409', async () => {
+    const email = 'existing-unverified@example.com';
+    const existingUser = {
+      _id: 'fakeid-existing',
+      name: 'Existing User',
+      email,
+      isVerified: false,
+      save: jest.fn().mockResolvedValue(true)
+    };
+
+    User.findOne.mockResolvedValue(existingUser);
+
+    const req = { body: { name: 'Existing User', email, password: 'secret123' } };
+    const res = makeRes();
+
+    await registerUser(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(existingUser.save).toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: email,
+      subject: expect.stringMatching(/verification code/i),
+      text: expect.stringMatching(/verification code is/i)
+    }));
+    const response = res.json.mock.calls[0][0];
+    expect(response.success).toBe(true);
+    expect(response.message).toMatch(/verification code has been sent|new verification code/i);
+  });
+
 });
