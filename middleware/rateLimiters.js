@@ -21,9 +21,13 @@ const createAuthLimiter = (options = {}) => {
 const registerLimiter = createAuthLimiter({ windowMs: 60 * 60 * 1000, max: 5, message: 'Too many registration attempts, please try again in an hour.' });
 const loginLimiter = createAuthLimiter({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts, please try again later.' });
 const otpLimiter = createAuthLimiter({ windowMs: 60 * 60 * 1000, max: 5, message: 'Too many OTP requests, please try again in an hour.' });
+const chatbotLimiter = createAuthLimiter({ windowMs: 60 * 1000, max: 20, message: 'Too many chatbot requests. Please wait a minute and try again.' });
+const feedbackLimiter = createAuthLimiter({ windowMs: 60 * 1000, max: 20, message: 'Too many quiz feedback requests. Please wait a minute and try again.' });
 
 module.exports = {
   registerLimiter,
   loginLimiter,
-  otpLimiter
+  otpLimiter,
+  chatbotLimiter,
+  feedbackLimiter
 };

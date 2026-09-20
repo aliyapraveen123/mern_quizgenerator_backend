@@ -1,4 +1,5 @@
 const Quiz = require('../models/Quiz');
+const { generateQuizFeedback } = require('./aiController');
 const { validateYouTubeUrl } = require('../utils/youtubeValidator');
 const { getTranscript } = require('../services/transcriptService');
 const { generateQuizFromTranscript } = require('../services/aiService');
@@ -156,6 +157,27 @@ const submitQuizResult = async (req, res) => {
     quiz.userAnswers = evaluatedAnswers;
     await quiz.save();
 
+    let feedbackResult = {
+      success: false,
+      data: null,
+      message: 'AI feedback is temporarily unavailable.'
+    };
+
+    try {
+      feedbackResult = await generateQuizFeedback(
+        quiz,
+        evaluatedAnswers,
+        {
+          score: correctCount,
+          totalQuestions,
+          percentage,
+          passed
+        }
+      );
+    } catch (error) {
+      console.warn('[QuizController] AI feedback generation failed:', error.message);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Quiz evaluated successfully',
@@ -167,7 +189,9 @@ const submitQuizResult = async (req, res) => {
         percentage,
         passed,
         userAnswers: evaluatedAnswers,
-        questions: quiz.questions
+        questions: quiz.questions,
+        feedback: feedbackResult.success && feedbackResult.data ? feedbackResult.data.feedback : null,
+        feedbackModel: feedbackResult.success && feedbackResult.data ? feedbackResult.data.model : null
       }
     });
   } catch (error) {

@@ -32,9 +32,11 @@ app.get('/api/health', (req, res) => {
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const quizRoutes = require('./routes/quizRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 Route Handler for undefined endpoints
 app.use((req, res) => {
