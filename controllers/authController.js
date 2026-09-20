@@ -97,7 +97,9 @@ const registerUser = async (req, res) => {
     const responseData = {
       _id: user._id,
       name: user.name,
-      email: user.email
+      email: user.email,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt
     };
 
     // Send OTP via email. Do NOT expose it in an API response or server logs.
@@ -164,7 +166,9 @@ const loginUser = async (req, res) => {
         data: {
           _id: user._id,
           name: user.name,
-          email: user.email
+          email: user.email,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt
         }
       });
     } else {
@@ -191,6 +195,102 @@ const getMe = async (req, res) => {
     success: true,
     data: req.user
   });
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and email are required.'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser && existingUser._id.toString() !== req.user._id.toString()) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email already exists.'
+      });
+    }
+
+    req.user.name = String(name).trim();
+    req.user.email = normalizedEmail;
+    await req.user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully.',
+      data: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        isVerified: req.user.isVerified,
+        createdAt: req.user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('updateProfile error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile. Please try again later.'
+    });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password, new password, and confirmation are required.'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirmation do not match.'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    const isMatch = await user.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect.'
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully.'
+    });
+  } catch (error) {
+    console.error('changePassword error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update password. Please try again later.'
+    });
+  }
 };
 
 // Verify OTP endpoint (POST /api/auth/verify-otp)
@@ -257,6 +357,8 @@ module.exports = {
   registerUser,
   loginUser,
   getMe,
+  updateProfile,
+  changePassword,
   verifyEmail,
   resendVerification
 };
