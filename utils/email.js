@@ -65,3 +65,4 @@ const sendEmail = async ({ to, subject, html, text }) => {
 };
 
 module.exports = { sendEmail, isEmailConfigured };
+
