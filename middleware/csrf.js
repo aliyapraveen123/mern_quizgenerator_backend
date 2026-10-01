@@ -4,14 +4,16 @@
 
 const url = require('url');
 
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 function isSameOrigin(reqOrigin) {
   try {
     if (!reqOrigin) return false;
     const parsed = new url.URL(reqOrigin);
-    const allowed = new url.URL(CLIENT_ORIGIN);
-    return parsed.protocol === allowed.protocol && parsed.hostname === allowed.hostname && parsed.port === allowed.port;
+    return CLIENT_ORIGINS.some((origin) => parsed.origin === new url.URL(origin).origin);
   } catch (e) {
     return false;
   }
