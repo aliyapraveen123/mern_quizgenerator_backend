@@ -52,8 +52,8 @@ const getTranscript = async (videoId) => {
 
     const words = fullText.split(/\s+/).filter(Boolean);
 
-    // Ensure there is sufficient educational content (minimum 50 words)
-    if (words.length < 50) {
+    // Reject only very short caption fragments; generation supports concise transcripts.
+    if (words.length < 40) {
       return {
         success: false,
         code: 'EMPTY_TRANSCRIPT',

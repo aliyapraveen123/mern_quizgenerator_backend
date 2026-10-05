@@ -1,5 +1,5 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret';
-const { registerUser, verifyEmail, loginUser } = require('../controllers/authController');
+const { registerUser, verifyEmail, loginUser, getMe } = require('../controllers/authController');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/email');
 
@@ -117,6 +117,33 @@ describe('Auth controller (unit)', () => {
     const response = res.json.mock.calls[0][0];
     expect(response.success).toBe(true);
     expect(response.message).toMatch(/verification code has been sent|new verification code/i);
+  });
+
+  test('getMe returns profile fields without password or verification secrets', async () => {
+    const req = {
+      user: {
+        _id: 'user-id',
+        name: 'Dolly Bisht',
+        email: 'dolly@example.com',
+        isVerified: true,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        password: 'hashed-password',
+        verificationTokenHash: 'secret-hash',
+        verificationTokenExpires: new Date('2026-01-01T00:10:00.000Z')
+      }
+    };
+    const res = makeRes();
+
+    await getMe(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0][0].data).toEqual({
+      _id: 'user-id',
+      name: 'Dolly Bisht',
+      email: 'dolly@example.com',
+      isVerified: true,
+      createdAt: req.user.createdAt
+    });
   });
 
 });

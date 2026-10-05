@@ -193,7 +193,13 @@ const loginUser = async (req, res) => {
 const getMe = async (req, res) => {
   res.status(200).json({
     success: true,
-    data: req.user
+    data: {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      isVerified: req.user.isVerified,
+      createdAt: req.user.createdAt
+    }
   });
 };
 
